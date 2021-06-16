@@ -1,10 +1,27 @@
 import React, { Component } from "react";
+import { getGenres } from "../services/fakeGenreService";
 import { getMovies } from "../services/fakeMovieService";
-import Like from "./common/like";
+import { paginate } from "../utils/paginate";
+import ListGroup from "./common/listGroup";
 import Pagination from "./common/pagination";
+import MoviesTable from "./moviesTable";
+import _ from "lodash";
 
 class Movies extends Component {
-  state = { movies: getMovies(), page: 1 };
+  state = {
+    movies: [],
+    currentPage: 1,
+    pageSize: 5,
+    genres: [],
+    sortColumn: { path: "title", order: "asc" },
+  };
+
+  componentDidMount() {
+    this.setState({
+      movies: getMovies(),
+      genres: [{ name: "All Movies", _id: "" }, ...getGenres()],
+    });
+  }
 
   handleDelete = (movieToBeDeleted) => {
     this.setState({
@@ -12,6 +29,10 @@ class Movies extends Component {
         (movie) => movie._id !== movieToBeDeleted._id
       ),
     });
+  };
+
+  handleGenreSelect = (genre) => {
+    this.setState({ selectedGenre: genre, currentPage: 1 });
   };
 
   handleLike = (movie) => {
@@ -25,150 +46,83 @@ class Movies extends Component {
   };
 
   handlePageChange = (page) => {
-    this.setState({ movies: this.state.movies, page });
+    this.setState({ currentPage: page });
   };
 
-  handleSorting = (e) => {
-    if (!e.target.getAttribute("data-attr")) return;
-
-    let sortDirection = this.state.sortDirection;
-    let sortOnColumn = this.state.sortOnColumn;
-    if (this.state.sortOnColumn === e.target.getAttribute("data-attr")) {
-      if (this.state.sortDirection === 1) {
-        sortDirection = 2;
-      } else if (this.state.sortDirection === 2) {
-        sortDirection = null;
-        sortOnColumn = null;
-      }
-    } else {
-      sortOnColumn = e.target.getAttribute("data-attr");
-      sortDirection = 1;
-    }
+  handleSort = (sortColumn) => {
     this.setState({
-      movies: this.state.movies,
-      page: this.state.page,
-      sortOnColumn,
-      sortDirection,
+      sortColumn,
     });
   };
 
   render() {
-    const pageLength = 5;
-    const startingIndex = (this.state.page - 1) * pageLength;
-    const endingIndex = startingIndex + pageLength;
-    let movies = this.state.movies;
-    if (this.state.sortOnColumn) {
-      movies.sort((first, second) => {
-        return this.state.sortDirection === 1
-          ? second[this.state.sortOnColumn] - first[this.state.sortOnColumn]
-          : first[this.state.sortOnColumn] - second[this.state.sortOnColumn];
-      });
+    const {
+      pageSize,
+      currentPage,
+      movies: allMovies,
+      genres,
+      selectedGenre,
+      sortColumn,
+    } = this.state;
+
+    let movies = allMovies;
+
+    // if (sortColumn.path) {
+    //   movies.sort((first, second) => {
+    //     return sortColumn.order === "asc"
+    //       ? second[sortColumn.path] - first[sortColumn.path]
+    //       : first[sortColumn.path] - second[sortColumn.path];
+    //   });
+    // }
+
+    if (selectedGenre) {
+      movies = movies.filter((movie) => movie.genre._id === selectedGenre._id);
     }
-    movies = movies.slice(startingIndex, endingIndex);
+    const filtered =
+      selectedGenre && selectedGenre._id
+        ? movies.filter((m) => m.genre._id === selectedGenre._id)
+        : allMovies;
+
+    const sorted = _.orderBy(filtered, [sortColumn.path], [sortColumn.order]);
+
+    movies = paginate(sorted, currentPage, pageSize);
 
     return (
       <React.Fragment>
-        {!movies.length && <p>There are no movies in the database</p>}
+        <br />
+        <div className="row">
+          <div className="col-3">
+            <ListGroup
+              items={genres}
+              selectedItem={selectedGenre}
+              onItemSelect={this.handleGenreSelect}
+            />
+          </div>
+          <div className="col">
+            {!movies.length && <p>There are no movies in the database</p>}
 
-        {movies.length > 0 && (
-          <p>Showing {movies.length} movies in the database</p>
-        )}
+            {movies.length > 0 && (
+              <p>Showing {movies.length} movies in the database</p>
+            )}
 
-        {movies.length > 0 && (
-          <table className="table table-striped">
-            <thead>
-              <tr>
-                <th
-                  onClick={(e) => this.handleSorting(e)}
-                  data-attr="title"
-                  style={{ cursor: "pointer" }}>
-                  Title
-                  {this.state.sortOnColumn === "title" &&
-                    this.state.sortDirection === 1 && (
-                      <i className="fa fa-arrow-down" aria-hidden="true"></i>
-                    )}
-                  {this.state.sortOnColumn === "title" &&
-                    this.state.sortDirection === 2 && (
-                      <i className="fa fa-arrow-up" aria-hidden="true"></i>
-                    )}
-                </th>
-                <th
-                  onClick={(e) => this.handleSorting(e)}
-                  data-attr="genre.name"
-                  style={{ cursor: "pointer" }}>
-                  Genre
-                  {this.state.sortOnColumn === "genre.name" &&
-                    this.state.sortDirection === 1 && (
-                      <i className="fa fa-arrow-down" aria-hidden="true"></i>
-                    )}
-                  {this.state.sortOnColumn === "genre.name" &&
-                    this.state.sortDirection === 2 && (
-                      <i className="fa fa-arrow-up" aria-hidden="true"></i>
-                    )}
-                </th>
-                <th
-                  onClick={(e) => this.handleSorting(e)}
-                  data-attr="numberInStock"
-                  style={{ cursor: "pointer" }}>
-                  Stock
-                  {this.state.sortOnColumn === "numberInStock" &&
-                    this.state.sortDirection === 1 && (
-                      <i className="fa fa-arrow-down" aria-hidden="true"></i>
-                    )}
-                  {this.state.sortOnColumn === "numberInStock" &&
-                    this.state.sortDirection === 2 && (
-                      <i className="fa fa-arrow-up" aria-hidden="true"></i>
-                    )}
-                </th>
-                <th
-                  onClick={(e) => this.handleSorting(e)}
-                  data-attr="dailyRentalRate"
-                  style={{ cursor: "pointer" }}>
-                  Rate
-                  {this.state.sortOnColumn === "dailyRentalRate" &&
-                    this.state.sortDirection === 1 && (
-                      <i className="fa fa-arrow-down" aria-hidden="true"></i>
-                    )}
-                  {this.state.sortOnColumn === "dailyRentalRate" &&
-                    this.state.sortDirection === 2 && (
-                      <i className="fa fa-arrow-up" aria-hidden="true"></i>
-                    )}
-                </th>
-                <th></th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {movies.map((movie) => (
-                <tr key={movie._id}>
-                  <td>{movie.title}</td>
-                  <td>{movie.genre.name}</td>
-                  <td>{movie.numberInStock}</td>
-                  <td>{movie.dailyRentalRate}</td>
-                  <td>
-                    <Like
-                      onClick={() => this.handleLike(movie)}
-                      liked={movie.liked}
-                    />
-                  </td>
-                  <td>
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => this.handleDelete(movie)}>
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+            {movies.length > 0 && (
+              <MoviesTable
+                movies={movies}
+                onDelete={this.handleDelete}
+                onLike={this.handleLike}
+                onSort={this.handleSort}
+                sortColumn={this.state.sortColumn}
+              />
+            )}
 
-        <Pagination
-          pages={Math.ceil(this.state.movies.length / pageLength)}
-          page={this.state.page}
-          handlePageChange={this.handlePageChange}
-        />
+            <Pagination
+              itemsCount={filtered.length}
+              pageSize={pageSize}
+              onPageChange={this.handlePageChange}
+              currentPage={currentPage}
+            />
+          </div>
+        </div>
       </React.Fragment>
     );
   }
