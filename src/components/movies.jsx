@@ -67,14 +67,6 @@ class Movies extends Component {
 
     let movies = allMovies;
 
-    // if (sortColumn.path) {
-    //   movies.sort((first, second) => {
-    //     return sortColumn.order === "asc"
-    //       ? second[sortColumn.path] - first[sortColumn.path]
-    //       : first[sortColumn.path] - second[sortColumn.path];
-    //   });
-    // }
-
     if (selectedGenre) {
       movies = movies.filter((movie) => movie.genre._id === selectedGenre._id);
     }
