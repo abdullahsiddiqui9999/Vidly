@@ -90,7 +90,7 @@ class Form extends Component {
         label={label}
         error={errors[name]}
         optionsData={optionsData}
-        defaultValue={data[name] || optionsData.options[0]._id}
+        value={data[name] || optionsData.options[0]._id}
         onChange={this.handleChange}
       />
     );

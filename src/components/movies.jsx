@@ -16,6 +16,7 @@ class Movies extends Component {
     pageSize: 5,
     genres: [],
     sortColumn: { path: "title", order: "asc" },
+    filterText: "",
   };
 
   componentDidMount() {
@@ -33,7 +34,7 @@ class Movies extends Component {
   };
 
   handleGenreSelect = (genre) => {
-    this.setState({ selectedGenre: genre, currentPage: 1 });
+    this.setState({ selectedGenre: genre, currentPage: 1, filterText: "" });
   };
 
   handleAdd = (movie) => {
@@ -60,6 +61,14 @@ class Movies extends Component {
     });
   };
 
+  handleSearchEntry = ({ currentTarget: input }) => {
+    this.setState({
+      filterText: input.value,
+      selectedGenre: null,
+      currentPage: 1,
+    });
+  };
+
   render() {
     const {
       pageSize,
@@ -68,6 +77,7 @@ class Movies extends Component {
       genres,
       selectedGenre,
       sortColumn,
+      filterText,
     } = this.state;
 
     let movies = allMovies;
@@ -75,10 +85,16 @@ class Movies extends Component {
     if (selectedGenre) {
       movies = movies.filter((movie) => movie.genre._id === selectedGenre._id);
     }
-    const filtered =
+    let filtered =
       selectedGenre && selectedGenre._id
         ? movies.filter((m) => m.genre._id === selectedGenre._id)
         : allMovies;
+
+    if (filterText) {
+      filtered = filtered.filter((m) =>
+        m.title.toLowerCase().includes(filterText.toLowerCase())
+      );
+    }
 
     const sorted = _.orderBy(filtered, [sortColumn.path], [sortColumn.order]);
 
@@ -117,6 +133,17 @@ class Movies extends Component {
                   {movies.length > 0 && (
                     <p>Showing {movies.length} movies in the database</p>
                   )}
+
+                  <div className="form-group">
+                    <input
+                      name="moviesFilter"
+                      id="moviesFilter"
+                      className="form-control"
+                      placeholder="Search..."
+                      onChange={this.handleSearchEntry}
+                      value={filterText}
+                    />
+                  </div>
 
                   {movies.length > 0 && (
                     <MoviesTable

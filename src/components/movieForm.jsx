@@ -15,6 +15,8 @@ class MovieForm extends Form {
 
       if (!movie) {
         history.replace("/not-found");
+
+        return;
       }
     }
 
