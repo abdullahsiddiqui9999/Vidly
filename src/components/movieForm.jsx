@@ -59,7 +59,7 @@ class MovieForm extends Form {
         {this.renderInput("title", "Title")}
 
         {this.renderSelect("genreId", "Genre", {
-          options: getGenres(),
+          options: [{ name: "", _id: "" }, ...getGenres()],
         })}
 
         {this.renderInput("numberInStock", "Number in Stock", "number")}
