@@ -1,7 +1,51 @@
+import Joi from "joi-browser";
 import React, { Component } from "react";
+import { getGenres } from "../services/fakeGenreService";
+import { getMovie, getMovies, saveMovie } from "../services/fakeMovieService";
+import Form from "./common/form";
+class MovieForm extends Form {
+  constructor(props) {
+    super(props);
 
-class MovieForm extends Component {
-  handleSave = () => {
+    const { match, history } = this.props;
+
+    let movie;
+    if (match.params.id) {
+      movie = getMovie(match.params.id);
+
+      if (!movie) {
+        history.replace("/not-found");
+      }
+    }
+
+    this.state = {
+      data: {
+        _id: movie ? movie._id : "",
+        title: movie ? movie.title : "",
+        genreId: movie ? movie.genre._id : "",
+        dailyRentalRate: movie ? movie.dailyRentalRate : "",
+        numberInStock: movie ? movie.numberInStock : "",
+      },
+      errors: {},
+    };
+  }
+
+  schema = {
+    _id: Joi.allow("").label("ID"),
+    title: Joi.string().required().label("Title"),
+    genreId: Joi.string().required().label("Genre"),
+    numberInStock: Joi.number()
+      .integer()
+      .required()
+      .min(0)
+      .max(1000)
+      .label("Number in Stock"),
+    dailyRentalRate: Joi.number().required().greater(0).max(5).label("Rate"),
+  };
+
+  doSubmit = () => {
+    this.props.doSubmit(saveMovie(this.state.data));
+
     this.props.history.push("/movies");
   };
 
@@ -11,9 +55,17 @@ class MovieForm extends Component {
     return (
       <div>
         <h1>Movie Form {match.params.id}</h1>
-        <button className="btn btn-primary" onClick={this.handleSave}>
-          Save
-        </button>
+
+        {this.renderInput("title", "Title")}
+
+        {this.renderSelect("genreId", "Genre", {
+          options: getGenres(),
+        })}
+
+        {this.renderInput("numberInStock", "Number in Stock", "number")}
+        {this.renderInput("dailyRentalRate", "Rate", "number")}
+
+        {this.renderButton("Save")}
       </div>
     );
   }

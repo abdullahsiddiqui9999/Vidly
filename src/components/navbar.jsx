@@ -7,7 +7,17 @@ const Navbar = (props) => {
       <NavLink className="navbar-brand" to="/">
         Vidly
       </NavLink>
-      <div>
+      <button
+        className="navbar-toggler"
+        type="button"
+        data-toggle="collapse"
+        data-target="#navbarNavDropdown"
+        aria-controls="navbarNavDropdown"
+        aria-expanded="false"
+        aria-label="Toggle navigation">
+        <span className="navbar-toggler-icon"></span>
+      </button>
+      <div className="collapse navbar-collapse">
         <ul className="navbar-nav mr-auto">
           <li className="nav-item">
             <NavLink className="nav-link" to="/movies">
@@ -22,6 +32,16 @@ const Navbar = (props) => {
           <li className="nav-item">
             <NavLink className="nav-link" to="/rentals">
               Rentals
+            </NavLink>
+          </li>
+          <li className="nav-item">
+            <NavLink className="nav-link" to="/login">
+              Login
+            </NavLink>
+          </li>
+          <li className="nav-item">
+            <NavLink className="nav-link" to="/register">
+              Register
             </NavLink>
           </li>
         </ul>

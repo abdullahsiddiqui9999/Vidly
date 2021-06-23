@@ -1,11 +1,13 @@
 import React, { Component } from "react";
 import { getGenres } from "../services/fakeGenreService";
-import { getMovies } from "../services/fakeMovieService";
+import { deleteMovie, getMovies } from "../services/fakeMovieService";
 import { paginate } from "../utils/paginate";
 import ListGroup from "./common/listGroup";
 import Pagination from "./common/pagination";
 import MoviesTable from "./moviesTable";
 import _ from "lodash";
+import { Link, Route, Switch } from "react-router-dom";
+import MovieForm from "./movieForm";
 
 class Movies extends Component {
   state = {
@@ -24,15 +26,18 @@ class Movies extends Component {
   }
 
   handleDelete = (movieToBeDeleted) => {
+    deleteMovie(movieToBeDeleted._id);
     this.setState({
-      movies: this.state.movies.filter(
-        (movie) => movie._id !== movieToBeDeleted._id
-      ),
+      movies: getMovies(),
     });
   };
 
   handleGenreSelect = (genre) => {
     this.setState({ selectedGenre: genre, currentPage: 1 });
+  };
+
+  handleAdd = (movie) => {
+    this.setState({ movies: getMovies() });
   };
 
   handleLike = (movie) => {
@@ -80,42 +85,61 @@ class Movies extends Component {
     movies = paginate(sorted, currentPage, pageSize);
 
     return (
-      <React.Fragment>
-        <br />
-        <div className="row">
-          <div className="col-3">
-            <ListGroup
-              items={genres}
-              selectedItem={selectedGenre}
-              onItemSelect={this.handleGenreSelect}
-            />
-          </div>
-          <div className="col">
-            {!movies.length && <p>There are no movies in the database</p>}
+      <Switch>
+        <Route
+          path={`${this.props.match.url}/new`}
+          render={(props) => <MovieForm doSubmit={this.handleAdd} {...props} />}
+        />
+        <Route
+          path={`${this.props.match.url}/:id`}
+          render={(props) => <MovieForm doSubmit={this.handleAdd} {...props} />}
+        />
+        <Route
+          path={this.props.match.url}
+          render={(props) => (
+            <React.Fragment>
+              <br />
+              <div className="row">
+                <div className="col-3">
+                  <ListGroup
+                    items={genres}
+                    selectedItem={selectedGenre}
+                    onItemSelect={this.handleGenreSelect}
+                  />
+                </div>
+                <div className="col">
+                  <Link to="/movies/new" className="btn btn-primary mb-3">
+                    New Movie
+                  </Link>
 
-            {movies.length > 0 && (
-              <p>Showing {movies.length} movies in the database</p>
-            )}
+                  {!movies.length && <p>There are no movies in the database</p>}
 
-            {movies.length > 0 && (
-              <MoviesTable
-                movies={movies}
-                onDelete={this.handleDelete}
-                onLike={this.handleLike}
-                onSort={this.handleSort}
-                sortColumn={this.state.sortColumn}
-              />
-            )}
+                  {movies.length > 0 && (
+                    <p>Showing {movies.length} movies in the database</p>
+                  )}
 
-            <Pagination
-              itemsCount={filtered.length}
-              pageSize={pageSize}
-              onPageChange={this.handlePageChange}
-              currentPage={currentPage}
-            />
-          </div>
-        </div>
-      </React.Fragment>
+                  {movies.length > 0 && (
+                    <MoviesTable
+                      movies={movies}
+                      onDelete={this.handleDelete}
+                      onLike={this.handleLike}
+                      onSort={this.handleSort}
+                      sortColumn={this.state.sortColumn}
+                    />
+                  )}
+
+                  <Pagination
+                    itemsCount={filtered.length}
+                    pageSize={pageSize}
+                    onPageChange={this.handlePageChange}
+                    currentPage={currentPage}
+                  />
+                </div>
+              </div>
+            </React.Fragment>
+          )}
+        />
+      </Switch>
     );
   }
 }
