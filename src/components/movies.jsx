@@ -1,13 +1,14 @@
 import React, { Component } from "react";
-import { getGenres } from "../services/fakeGenreService";
-import { deleteMovie, getMovies } from "../services/fakeMovieService";
+import { getGenres } from "../services/genreService";
+import { deleteMovie, getMovies } from "../services/movieService";
 import { paginate } from "../utils/paginate";
 import ListGroup from "./common/listGroup";
 import Pagination from "./common/pagination";
 import MoviesTable from "./moviesTable";
-import _ from "lodash";
+import _, { times } from "lodash";
 import { Link, Route, Switch } from "react-router-dom";
 import MovieForm from "./movieForm";
+import { toast } from "react-toastify";
 
 class Movies extends Component {
   state = {
@@ -19,26 +20,50 @@ class Movies extends Component {
     filterText: "",
   };
 
-  componentDidMount() {
+  async componentDidMount() {
+    const { data: genres } = await getGenres();
+    const { data: movies } = await getMovies();
     this.setState({
-      movies: getMovies(),
-      genres: [{ name: "All Movies", _id: "" }, ...getGenres()],
+      movies,
+      genres: [{ name: "All Movies", _id: "" }, ...genres],
     });
   }
 
-  handleDelete = (movieToBeDeleted) => {
-    deleteMovie(movieToBeDeleted._id);
+  handleDelete = async (movieToBeDeleted) => {
+    const { movies } = this.state;
+
     this.setState({
-      movies: getMovies(),
+      movies: movies.filter((m) => m._id !== movieToBeDeleted._id),
     });
+
+    try {
+      await deleteMovie(movieToBeDeleted._id);
+    } catch (e) {
+      if (e.response && e.response.status === 404) {
+        toast.error("Movie doesnt exixt");
+      }
+
+      this.setState({
+        movies,
+      });
+    }
   };
 
   handleGenreSelect = (genre) => {
     this.setState({ selectedGenre: genre, currentPage: 1, filterText: "" });
   };
 
-  handleAdd = (movie) => {
-    this.setState({ movies: getMovies() });
+  handleAdd = async (movie) => {
+    let existingMovie;
+
+    if ((existingMovie = this.state.movies.find((m) => m._id === movie._id))) {
+      const updatedMovies = [...this.state.movies];
+      updatedMovies[updatedMovies.indexOf(existingMovie)] = movie;
+      this.setState({ movies: updatedMovies });
+    } else {
+      const updatedMovies = [...this.state.movies, movie];
+      this.setState({ movies: updatedMovies });
+    }
   };
 
   handleLike = (movie) => {
@@ -104,11 +129,15 @@ class Movies extends Component {
       <Switch>
         <Route
           path={`${this.props.match.url}/new`}
-          render={(props) => <MovieForm doSubmit={this.handleAdd} {...props} />}
+          render={(props) => (
+            <MovieForm {...props} handleAdd={this.handleAdd} />
+          )}
         />
         <Route
           path={`${this.props.match.url}/:id`}
-          render={(props) => <MovieForm doSubmit={this.handleAdd} {...props} />}
+          render={(props) => (
+            <MovieForm {...props} handleAdd={this.handleAdd} />
+          )}
         />
         <Route
           path={this.props.match.url}

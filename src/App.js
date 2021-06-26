@@ -1,6 +1,7 @@
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.css";
 import "font-awesome/css/font-awesome.css";
+import "react-toastify/dist/ReactToastify.css";
 import Movies from "./components/movies";
 import { React } from "react";
 import Navbar from "./components/navbar";
@@ -10,10 +11,12 @@ import Rentals from "./components/rentals";
 import NotFound from "./components/notFound";
 import LoginForm from "./components/loginForm";
 import RegisterForm from "./components/registerForm";
+import { ToastContainer } from "react-toastify";
 
 function App() {
   return (
     <div>
+      <ToastContainer />
       <Navbar />
       <main className="container">
         <Switch>

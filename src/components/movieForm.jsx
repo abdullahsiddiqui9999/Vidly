@@ -1,26 +1,46 @@
 import Joi from "joi-browser";
 import React, { Component } from "react";
-import { getGenres } from "../services/fakeGenreService";
-import { getMovie, getMovies, saveMovie } from "../services/fakeMovieService";
+import { getGenres } from "../services/genreService";
+import { getMovie } from "../services/movieService";
 import Form from "./common/form";
+import { toast } from "react-toastify";
+import { saveMovie } from "../services/movieService";
+
 class MovieForm extends Form {
   constructor(props) {
     super(props);
 
+    this.state = {
+      data: {
+        _id: "",
+        title: "",
+        genreId: "",
+        dailyRentalRate: "",
+        numberInStock: "",
+      },
+      errors: {},
+    };
+  }
+
+  async componentDidMount() {
     const { match, history } = this.props;
 
     let movie;
     if (match.params.id) {
-      movie = getMovie(match.params.id);
-
-      if (!movie) {
-        history.replace("/not-found");
-
-        return;
+      try {
+        const response = await getMovie(match.params.id);
+        movie = response.data;
+      } catch (ex) {
+        if (ex.response && ex.response.status === 404) {
+          return history.replace("/not-found");
+        }
       }
     }
 
-    this.state = {
+    this.genres = (await getGenres()).data;
+    this.genres = [{ name: "", _id: "" }, ...this.genres];
+
+    this.setState({
       data: {
         _id: movie ? movie._id : "",
         title: movie ? movie.title : "",
@@ -29,7 +49,7 @@ class MovieForm extends Form {
         numberInStock: movie ? movie.numberInStock : "",
       },
       errors: {},
-    };
+    });
   }
 
   schema = {
@@ -45,10 +65,14 @@ class MovieForm extends Form {
     dailyRentalRate: Joi.number().required().greater(0).max(5).label("Rate"),
   };
 
-  doSubmit = () => {
-    this.props.doSubmit(saveMovie(this.state.data));
-
-    this.props.history.push("/movies");
+  doSubmit = async () => {
+    try {
+      const response = await saveMovie(this.state.data);
+      this.props.handleAdd(response.data);
+      this.props.history.push("/movies");
+    } catch (ex) {
+      throw ex;
+    }
   };
 
   render() {
@@ -61,7 +85,7 @@ class MovieForm extends Form {
         {this.renderInput("title", "Title")}
 
         {this.renderSelect("genreId", "Genre", {
-          options: [{ name: "", _id: "" }, ...getGenres()],
+          options: this.genres,
         })}
 
         {this.renderInput("numberInStock", "Number in Stock", "number")}
