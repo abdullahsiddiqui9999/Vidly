@@ -9,6 +9,7 @@ import _, { times } from "lodash";
 import { Link, Route, Switch } from "react-router-dom";
 import MovieForm from "./movieForm";
 import { toast } from "react-toastify";
+import ProtectedRoute from "./common/protectedRoute";
 
 class Movies extends Component {
   state = {
@@ -127,13 +128,13 @@ class Movies extends Component {
 
     return (
       <Switch>
-        <Route
+        <ProtectedRoute
           path={`${this.props.match.url}/new`}
           render={(props) => (
             <MovieForm {...props} handleAdd={this.handleAdd} />
           )}
         />
-        <Route
+        <ProtectedRoute
           path={`${this.props.match.url}/:id`}
           render={(props) => (
             <MovieForm {...props} handleAdd={this.handleAdd} />
